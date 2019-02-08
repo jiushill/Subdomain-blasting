@@ -20,6 +20,7 @@
 - - -
 此工具适用于windows。如果是Linux用户请自行下载Chrome的驱动和浏览器
 扔到脚本目录，驱动下载地址：https://sites.google.com/a/chromium.org/chromedriver/downloads
+指定端口扫描，不要把80和443去掉。
 
 ## 更新 ##
 - - -
