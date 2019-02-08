@@ -7,8 +7,10 @@ import os
 import time
 import socket
 import re
+from selenium import webdriver
 
 dict=[]
+port=[]
 found_domain=[]
 lock=threading.BoundedSemaphore(100)
 
@@ -24,8 +26,15 @@ class Rkst:
                 for r in jso:
                     ip=self.sok(r['domain'])
                     title=self.title(r['domain'])
-                    print('[+] 查询到的域名：{} IP地址：{} {}'.format(r['domain'],ip,title))
-                    print('[+] 查询到的域名：{} IP地址：{} {}'.format(r['domain'],ip,title),file=open('save.txt','a'))
+                    op=self.port_scan(r['domain'])
+                    if '' in op:
+                        pass
+                    if '80' in op:
+                        self.jietu(url='http://{}'.format(r['domain']))
+                    elif '443' in op:
+                        self.jietu(url='https://{}'.format(r['domain']))
+                    print('[+] 查询到的域名：{} IP地址：{} {} 端口：{}'.format(r['domain'],ip,title,op))
+                    print('[+] 查询到的域名：{} IP地址：{} {} 端口：{}'.format(r['domain'],ip,title,op),file=open('save.txt','a'))
             else:
                 print('[-] 无数据')
         except Exception as r:
@@ -37,13 +46,26 @@ class Rkst:
                 qc="".join(k.split('\n'))
                 yield qc
 
+    def port_read(self,file):
+        for p in file.readlines():
+            qc2="".join(p.split('\n'))
+            yield qc2
+
     def one_domain(self,url):
         for q in dict:
             urls=q+'.'+url
             ip=self.sok(urls)
             if ip:
                 title=self.title(urls)
-                print('[+] 爆破到的域名：{} IP地址：{} {}'.format(urls,ip,title))
+                op=self.port_scan(str(urls).replace('http://','').replace('https://',''))
+                if '' in op:
+                    pass
+                if '80' in op:
+                    self.jietu(url='http://{}'.format(urls))
+                elif '443' in op:
+                    self.jietu(url='https://{}'.format(urls))
+                print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls,ip,title,op))
+                print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op),file=open('save.txt','a'))
 
         lock.release()
     def two_domain(self,url):
@@ -53,7 +75,15 @@ class Rkst:
                 ip = self.sok(urls)
                 if ip:
                     title = self.title(urls)
-                    print('[+] 爆破到的域名：{} IP地址：{} {}'.format(urls, ip, title))
+                    op = self.port_scan(str(urls).replace('http://', '').replace('https://', ''))
+                    if '' in op:
+                        pass
+                    if '80' in op:
+                        self.jietu(url='http://{}'.format(urls))
+                    elif '443' in op:
+                        self.jietu(url='https://{}'.format(urls))
+                    print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op))
+                    print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op), file=open('save.txt', 'a'))
 
         lock.release()
     def san_domain(self,url):
@@ -64,7 +94,15 @@ class Rkst:
                     ip = self.sok(urls)
                     if ip:
                         title = self.title(urls)
-                        print('[+] 爆破到的域名：{} IP地址：{} {}'.format(urls, ip, title))
+                        op = self.port_scan(str(urls).replace('http://', '').replace('https://', ''))
+                        if '' in op:
+                            pass
+                        if '80' in op:
+                            self.jietu(url='http://{}'.format(urls))
+                        elif '443' in op:
+                            self.jietu(url='https://{}'.format(urls))
+                        print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op))
+                        print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op), file=open('save.txt', 'a'))
 
         lock.release()
     def si_domain(self,url):
@@ -76,7 +114,16 @@ class Rkst:
                         ip = self.sok(urls)
                         if ip:
                             title = self.title(urls)
-                            print('[+] 爆破到的域名：{} IP地址：{} {}'.format(urls, ip, title))
+                            op = self.port_scan(str(urls).replace('http://', '').replace('https://', ''))
+                            if '' in op:
+                                pass
+                            if '80' in op:
+                                self.jietu(url='http://{}'.format(urls))
+                            elif '443' in op:
+                                self.jietu(url='https://{}'.format(urls))
+                            print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op))
+                            print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op),file=open('save.txt', 'a'))
+
 
         lock.release()
     def wu_domain(self,url):
@@ -89,7 +136,15 @@ class Rkst:
                             ip = self.sok(urls)
                             if ip:
                                 title = self.title(urls)
-                                print('[+] 爆破到的域名：{} IP地址：{} {}'.format(urls, ip, title))
+                                op = self.port_scan(str(urls).replace('http://', '').replace('https://', ''))
+                                if '' in op:
+                                    pass
+                                if '80' in op:
+                                    self.jietu(url='http://{}'.format(urls))
+                                elif '443' in op:
+                                    self.jietu(url='https://{}'.format(urls))
+                                print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op))
+                                print('[+] 爆破到的域名：{} IP地址：{} {} 端口：{}'.format(urls, ip, title, op),file=open('save.txt', 'a'))
         lock.release()
     def sok(self,domain):
         try:
@@ -124,6 +179,23 @@ class Rkst:
             return None
             pass
 
+    def port_scan(self,host):
+        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.settimeout(3)
+        try:
+            for z in port:
+                s.connect(('{}'.format(host),int(z)))
+                return '{}/open '.format(z)
+        except:
+            return ''
+            pass
+
+    def jietu(self,url):
+        brower = webdriver.Chrome()
+        brower.get(url)
+        brower.save_screenshot('img/{}.png'.format(str(url).replace('https://','').replace('http://','')))
+        brower.close()
+
 if __name__ == '__main__':
     headers={'user-agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
     jkl='http://sbd.ximcx.cn/DomainServlet'
@@ -147,9 +219,20 @@ if __name__ == '__main__':
         print('[-] 退出程序...')
         exit()
 
+    if os.path.exists('file/port.txt'):
+        print('[@] 找到了port.txt')
+    else:
+        print('[-] 找不到port.txt')
+        print('[-] 退出程序...')
+        exit()
+
     dk=open('file/one.txt','r')
     for r in obj.shenc(dk):
         dict.append(r)
+
+    dk2=open('file/port.txt','r')
+    for v in obj.port_read(dk2):
+        port.append(v)
 
     print('[*] 爆破模式')
     if xw=='1':
