@@ -26,12 +26,13 @@ PS:请在脚本同目录下创建img文件夹
 ## 注意 ##
 - - -
 此工具适用于windows。如果是Linux用户请自行下载Chrome的驱动和浏览器
+
 扔到脚本目录，驱动下载地址：https://sites.google.com/a/chromium.org/chromedriver/downloads
-指定端口扫描，不要把80和443去掉。
 
 ## 更新 ##
 - - -
 修复了一些BUG，子域名爆破新增加了端口扫描和网页截图
+
 2019/2/9 By 九世
 
 - - -
