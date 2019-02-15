@@ -10,7 +10,7 @@ import re
 from selenium import webdriver
 
 dict=[]
-port=[]
+port=[80,443]
 found_domain=[]
 lock=threading.BoundedSemaphore(100)
 
@@ -37,10 +37,12 @@ class Rkst:
                     print('[+] 查询到的域名：{} IP地址：{} {} 端口：{}'.format(r['domain'],ip,title,op),file=open('save.txt','a'))
             else:
                 print('[-] 无数据')
+
+            return 1
         except Exception as r:
             print('[-] 神奇的报错冒了出来：{}'.format(r))
 
-        lock.release()
+
     def shenc(self,file):
             for k in file.readlines():
                 qc="".join(k.split('\n'))
@@ -191,92 +193,141 @@ class Rkst:
             pass
 
     def jietu(self,url):
-        brower = webdriver.Chrome()
-        brower.get(url)
-        brower.save_screenshot('img/{}.png'.format(str(url).replace('https://','').replace('http://','')))
-        brower.close()
+        try:
+            brower = webdriver.Chrome()
+            brower.set_page_load_timeout(5)
+            brower.get(url)
+            brower.save_screenshot('img/{}.png'.format(str(url).replace('https://','').replace('http://','')))
+            brower.close()
+        except:
+            print('[-] 截图此：{}超时'.format(url))
+            pass
+
+    def dnsjiekou(self,domain):
+        dns_hosts=[]
+        dns_domain=[]
+        url='https://dns.bufferover.run/dns?q={}'.format(domain)
+        rqts=requests.get(url=url,headers=self.headers)
+        ds=rqts.json()
+        meta=ds['Meta']
+        dns_time=meta['FileNames']
+        print('[+] 记录的时间：{}'.format(dns_time[0]))
+        A_DNS=ds['FDNS_A']
+        if A_DNS==None:
+            print('[-] 没有查询到对应的DNS记录')
+        else:
+            for a in A_DNS:
+                domain_zz=re.findall(',.*',str(a))
+                host_zz=re.findall('.*,',str(a))
+                for r in domain_zz:
+                    dns_domain.append(str(r).replace(',',''))
+
+                for w in host_zz:
+                    dns_hosts.append(str(w).replace(',',''))
+
+            for y in range(0,len(dns_hosts)):
+                ps=self.port_scan(dns_domain[y])
+                print('[+] DNS记录查询到的：IP:{} 域名：{} 开放的端口：{}'.format(dns_hosts[y],dns_domain[y],ps))
+                if '80' in ps:
+                    http='http://{}'.format(dns_domain[y])
+                    self.jietu(http)
+                elif '443' in ps:
+                    https='https://{}'.format(dns_domain[y])
+                    self.jietu(https)
+                else:
+                    pass
+
+        return 1
 
 if __name__ == '__main__':
     headers={'user-agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
     jkl='http://sbd.ximcx.cn/DomainServlet'
     print('九世版子域名查询_何安圻')
     user=input('查询的域名：')
-    print('[@] 接下来设置爆破模式，输入1为爆破一级域名，输入2为爆破二级域名，输入3位爆破三级域名，输入4为爆破四级域名，输入5位爆破5级域名，输入all为全开 注意：此模式很慢')
+    print('[@] 接下来设置爆破模式，输入1为爆破一级域名，输入2为爆破二级域名，输入3位爆破三级域名，输入4为爆破四级域名，输入5位爆破5级域名，输入all为全开 注意：此模式很慢,输入N为不爆破')
     xw=input('设置爆破模式：')
     data={'domain': '{}'.format(user)}
     obj=Rkst(headers=headers)
 
-    print('[*] 接口查询模式')
-    lock.acquire()
-    t=threading.Thread(target=obj.jiekou,args=(jkl,data))
-    t.start()
+    print('[*] 国外某接口DNS记录查询')
+    fanh=obj.dnsjiekou(user)
+    if fanh==1:
+        fj=obj.jiekou(jkl,data)
+        if fj==1:
+            if os.path.exists('file/one.txt'):
+                print('[@] 找到了神奇的爆破字典')
+            else:
+                print('[-] 找不到字典= =#')
+                print('[-] 退出程序...')
+                exit()
 
+            if os.path.exists('file/port.txt'):
+                print('[@] 找到了port.txt')
+            else:
+                print('[-] 找不到port.txt')
+                print('[-] 退出程序...')
+                exit()
 
-    if os.path.exists('file/one.txt'):
-        print('[@] 找到了神奇的爆破字典')
-    else:
-        print('[-] 找不到字典= =#')
-        print('[-] 退出程序...')
-        exit()
+            dk=open('file/one.txt','r')
+            for r in obj.shenc(dk):
+                dict.append(r)
 
-    if os.path.exists('file/port.txt'):
-        print('[@] 找到了port.txt')
-    else:
-        print('[-] 找不到port.txt')
-        print('[-] 退出程序...')
-        exit()
+            dk2=open('file/port.txt','r')
+            for v in obj.port_read(dk2):
+                port.append(v)
 
-    dk=open('file/one.txt','r')
-    for r in obj.shenc(dk):
-        dict.append(r)
+            print('[*] 爆破模式')
+            if xw=='1':
+                print('[*] 爆破一级子域名')
+                lock.acquire()
+                s=threading.Thread(target=obj.one_domain,args=(user,))
+                s.start()
 
-    dk2=open('file/port.txt','r')
-    for v in obj.port_read(dk2):
-        port.append(v)
+            elif xw=='2':
+                print('[*] 爆破二级子域名')
+                lock.acquire()
+                s2 = threading.Thread(target=obj.two_domain, args=(user,))
+                s2.start()
 
-    print('[*] 爆破模式')
-    if xw=='1':
-        lock.acquire()
-        s=threading.Thread(target=obj.one_domain,args=(user,))
-        s.start()
+            elif xw=='3':
+                print('[*] 爆破三级子域名')
+                lock.acquire()
+                s3 = threading.Thread(target=obj.san_domain, args=(user,))
+                s3.start()
 
-    elif xw=='2':
-        lock.acquire()
-        s2 = threading.Thread(target=obj.two_domain, args=(user,))
-        s2.start()
+            elif xw=='4':
+                print('[*] 爆破四级子域名')
+                lock.acquire()
+                s4 = threading.Thread(target=obj.si_domain, args=(user,))
+                s4.start()
 
-    elif xw=='3':
-        lock.acquire()
-        s3 = threading.Thread(target=obj.san_domain, args=(user,))
-        s3.start()
+            elif xw=='5':
+                print('[*] 爆破五级子域名')
+                lock.acquire()
+                s5 = threading.Thread(target=obj.wu_domain, args=(user,))
+                s5.start()
 
-    elif xw=='4':
-        lock.acquire()
-        s4 = threading.Thread(target=obj.si_domain, args=(user,))
-        s4.start()
+            elif xw=='all':
+                print('[+] 全部级别爆破')
+                lock.acquire()
+                s = threading.Thread(target=obj.one_domain, args=(user,))
+                s.start()
 
-    elif xw=='5':
-        lock.acquire()
-        s5 = threading.Thread(target=obj.wu_domain, args=(user,))
-        s5.start()
+                lock.acquire()
+                s2 = threading.Thread(target=obj.two_domain, args=(user,))
+                s2.start()
 
-    elif xw=='all':
-        lock.acquire()
-        s = threading.Thread(target=obj.one_domain, args=(user,))
-        s.start()
+                lock.acquire()
+                s3 = threading.Thread(target=obj.san_domain, args=(user,))
+                s3.start()
 
-        lock.acquire()
-        s2 = threading.Thread(target=obj.two_domain, args=(user,))
-        s2.start()
+                lock.acquire()
+                s4 = threading.Thread(target=obj.si_domain, args=(user,))
+                s4.start()
 
-        lock.acquire()
-        s3 = threading.Thread(target=obj.san_domain, args=(user,))
-        s3.start()
-
-        lock.acquire()
-        s4 = threading.Thread(target=obj.si_domain, args=(user,))
-        s4.start()
-
-        lock.acquire()
-        s5 = threading.Thread(target=obj.wu_domain, args=(user,))
-        s5.start()
+                lock.acquire()
+                s5 = threading.Thread(target=obj.wu_domain, args=(user,))
+                s5.start()
+            elif xw=='N':
+                print('[+] 不爆破子域名')
+                pass
