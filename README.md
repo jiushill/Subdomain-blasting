@@ -40,3 +40,12 @@ PS:请在脚本同目录下创建img文件夹
 https://dns.bufferover.run/dns?q=
 
 2019/2/15 by 九世
+
+- - -
+今天有位朋友和我说国外的那个dns接口不行了，我打开一看发现加了反爬机制。。怪不得会报错
+
+解决思路：https://www.zhihu.com/question/55642280
+
+https://blog.csdn.net/u013553529/article/details/52134529
+
+2019/2/24 by 九世
