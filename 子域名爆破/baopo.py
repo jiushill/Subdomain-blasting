@@ -206,9 +206,24 @@ class Rkst:
     def dnsjiekou(self,domain):
         dns_hosts=[]
         dns_domain=[]
-        url='https://dns.bufferover.run/dns?q={}'.format(domain)
-        rqts=requests.get(url=url,headers=self.headers)
-        ds=rqts.json()
+        ck = []
+        al='https://dns.bufferover.run/dns?q={}'.format(domain)
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+        chrome = webdriver.Chrome()
+        chrome.get('https://dns.bufferover.run/dns')
+        time.sleep(5)
+        cookie = chrome.get_cookies()
+        for c in cookie:
+            ck.append(c['value'])
+
+        cookies = 'cookie: __cfduid={};cf_clearance={}'.format(ck[0], ck[1])
+        cookieq = {}
+        for c in cookies.split(';'):
+            key, value = c.split('=', 1)
+            cookieq[key] = value
+
+        ds = requests.get(url=al, headers=headers, cookies=cookieq)
+        ds=ds.json()
         meta=ds['Meta']
         dns_time=meta['FileNames']
         print('[+] 记录的时间：{}'.format(dns_time[0]))
