@@ -207,51 +207,67 @@ class Rkst:
         dns_hosts=[]
         dns_domain=[]
         ck = []
-        al='https://dns.bufferover.run/dns?q={}'.format(domain)
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-        chrome = webdriver.Chrome()
-        chrome.get('https://dns.bufferover.run/dns')
-        time.sleep(5)
-        cookie = chrome.get_cookies()
-        for c in cookie:
-            ck.append(c['value'])
+        while True:
+            k = 0
+            al='https://dns.bufferover.run/dns?q={}'.format(domain)
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            chrome = webdriver.Chrome()
+            chrome.get('https://dns.bufferover.run/dns?q={}'.format(domain))
+            time.sleep(5)
+            cookie = chrome.get_cookies()
+            for c in cookie:
+                ck.append(c['value'])
 
-        cookies = 'cookie: __cfduid={};cf_clearance={}'.format(ck[0], ck[1])
-        cookieq = {}
-        for c in cookies.split(';'):
-            key, value = c.split('=', 1)
-            cookieq[key] = value
+            if k == 10:
+                print('[-] 无法获取COOKIE....DNS接口查询失败')
+                break
+            if len(ck)!=0:
+                break
+            else:
+                k+=1
+                continue
 
-        ds = requests.get(url=al, headers=headers, cookies=cookieq)
-        ds=ds.json()
-        meta=ds['Meta']
-        dns_time=meta['FileNames']
-        print('[+] 记录的时间：{}'.format(dns_time[0]))
-        A_DNS=ds['FDNS_A']
-        if A_DNS==None:
-            print('[-] 没有查询到对应的DNS记录')
-        else:
-            for a in A_DNS:
-                domain_zz=re.findall(',.*',str(a))
-                host_zz=re.findall('.*,',str(a))
-                for r in domain_zz:
-                    dns_domain.append(str(r).replace(',',''))
+        if len(ck)!=0:
+            cookies = 'cookie: __cfduid={};cf_clearance={}'.format(ck[0], ck[1])
+            print('[+] DNS的接口查询的cookie为：{}'.format(cookies))
+            cookieq = {}
+            for c in cookies.split(';'):
+                key, value = c.split('=', 1)
+                cookieq[key] = value
 
-                for w in host_zz:
-                    dns_hosts.append(str(w).replace(',',''))
-
-            for y in range(0,len(dns_hosts)):
-                ps=self.port_scan(dns_domain[y])
-                print('[+] DNS记录查询到的：IP:{} 域名：{} 开放的端口：{}'.format(dns_hosts[y],dns_domain[y],ps))
-                if '80' in ps:
-                    http='http://{}'.format(dns_domain[y])
-                    self.jietu(http)
-                elif '443' in ps:
-                    https='https://{}'.format(dns_domain[y])
-                    self.jietu(https)
+            try:
+                ds = requests.get(url=al, headers=headers, cookies=cookieq)
+                ds=ds.json()
+                meta=ds['Meta']
+                dns_time=meta['FileNames']
+                print('[+] 记录的时间：{}'.format(dns_time[0]))
+                A_DNS=ds['FDNS_A']
+                if A_DNS==None:
+                    print('[-] 没有查询到对应的DNS记录')
                 else:
-                    pass
+                    for a in A_DNS:
+                        domain_zz=re.findall(',.*',str(a))
+                        host_zz=re.findall('.*,',str(a))
+                        for r in domain_zz:
+                            dns_domain.append(str(r).replace(',',''))
 
+                        for w in host_zz:
+                            dns_hosts.append(str(w).replace(',',''))
+
+                    for y in range(0,len(dns_hosts)):
+                        ps=self.port_scan(dns_domain[y])
+                        print('[+] DNS记录查询到的：IP:{} 域名：{} 开放的端口：{}'.format(dns_hosts[y],dns_domain[y],ps))
+                        if '80' in ps:
+                            http='http://{}'.format(dns_domain[y])
+                            self.jietu(http)
+                        elif '443' in ps:
+                            https='https://{}'.format(dns_domain[y])
+                            self.jietu(https)
+                        else:
+                            pass
+            except Exception as r:
+                print('[-] 报错：{}'.format(r))
+                pass
         return 1
 
 if __name__ == '__main__':
